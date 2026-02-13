@@ -13,9 +13,6 @@
       <!-- Sky -->
       <a-sky color="#111"></a-sky>
 
-      <!-- Test cube at 0,0,0 -->
-      <a-box position="0 0.05 0" depth="15" height="15" width="15" color="green" dynamic-body></a-box>
-
       <!-- Camera Rig -->
       <a-entity id="rig" position="0 1.6 0">
         <a-entity camera look-controls></a-entity>
@@ -37,9 +34,9 @@
         const leftCube = document.querySelector('#leftCube');
         const rightCube = document.querySelector('#rightCube');
 
+        // Move tiny cubes with controllers
         AFRAME.registerComponent('cube-controller', {
           tick: function () {
-            // Move controller cubes to match hands
             leftCube.object3D.position.copy(leftHand.object3D.position);
             leftCube.object3D.rotation.copy(leftHand.object3D.rotation);
 
@@ -49,6 +46,28 @@
         });
 
         document.querySelector('a-scene').setAttribute('cube-controller', '');
+
+        // Spawn dynamic cubes at right hand on trigger press
+        AFRAME.registerComponent('spawn-cube', {
+          init: function () {
+            const sceneEl = this.el;
+            const right = rightHand;
+
+            // Listen for trigger press
+            right.addEventListener('triggerdown', () => {
+              const cube = document.createElement('a-box');
+              cube.setAttribute('position', right.object3D.position);
+              cube.setAttribute('depth', 0.1);
+              cube.setAttribute('height', 0.1);
+              cube.setAttribute('width', 0.1);
+              cube.setAttribute('color', '#00ff00');
+              cube.setAttribute('dynamic-body', '');
+              sceneEl.appendChild(cube);
+            });
+          }
+        });
+
+        document.querySelector('a-scene').setAttribute('spawn-cube', '');
       </script>
     </a-scene>
   </body>
