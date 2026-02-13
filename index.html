@@ -3,24 +3,28 @@
   <head>
     <title>Quest3S Labs</title>
     <script src="https://aframe.io/releases/1.5.0/aframe.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/gh/n5ro/aframe-physics-system@v4.0.1/dist/aframe-physics-system.min.js"></script>
   </head>
   <body>
-    <a-scene>
-      <!-- Floor -->
-      <a-plane rotation="-90 0 0" width="20" height="20" color="#222"></a-plane>
+    <a-scene physics="gravity: -9.8; debug: false">
+      <!-- Floor with physics -->
+      <a-plane rotation="-90 0 0" width="20" height="20" color="#222" static-body></a-plane>
 
       <!-- Sky -->
       <a-sky color="#111"></a-sky>
+
+      <!-- Test cube at 0,0,0 -->
+      <a-box position="0 0.05 0" depth="0.1" height="0.1" width="0.1" color="green" dynamic-body></a-box>
 
       <!-- Camera Rig -->
       <a-entity id="rig" position="0 1.6 0">
         <a-entity camera look-controls></a-entity>
 
         <!-- Tiny cube for left controller -->
-        <a-box id="leftCube" position="0 0 0" color="red" depth="0.1" height="0.2" width="0.1"></a-box>
+        <a-box id="leftCube" position="0 0 0" color="red" depth="0.1" height="0.1" width="0.1" kinematic-body></a-box>
 
         <!-- Tiny cube for right controller -->
-        <a-box id="rightCube" position="0 0 0" color="blue" depth="0.1" height="0.2" width="0.1"></a-box>
+        <a-box id="rightCube" position="0 0 0" color="blue" depth="0.1" height="0.1" width="0.1" kinematic-body></a-box>
 
         <!-- Hand entities (hidden) -->
         <a-entity id="leftHand" laser-controls="hand: left" visible="false"></a-entity>
@@ -35,7 +39,7 @@
 
         AFRAME.registerComponent('cube-controller', {
           tick: function () {
-            // Update cube positions to match controllers
+            // Move controller cubes to match hands
             leftCube.object3D.position.copy(leftHand.object3D.position);
             leftCube.object3D.rotation.copy(leftHand.object3D.rotation);
 
