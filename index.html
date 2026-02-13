@@ -1,31 +1,51 @@
 <!DOCTYPE html>
 <html>
-<head>
-  <title>Quest3S VR Lab</title>
-  <script src="https://aframe.io/releases/1.5.0/aframe.min.js"></script>
-</head>
-<body>
+  <head>
+    <title>Quest3S Labs</title>
+    <script src="https://aframe.io/releases/1.5.0/aframe.min.js"></script>
+  </head>
+  <body>
+    <a-scene>
+      <!-- Floor -->
+      <a-plane rotation="-90 0 0" width="20" height="20" color="#222"></a-plane>
 
-<a-scene>
+      <!-- Sky -->
+      <a-sky color="#111"></a-sky>
 
-  <!-- Ground -->
-  <a-plane rotation="-90 0 0" width="50" height="50" color="#222"></a-plane>
+      <!-- Camera Rig -->
+      <a-entity id="rig" position="0 1.6 0">
+        <a-entity camera look-controls></a-entity>
 
-  <!-- Spinning Cube -->
-  <a-box position="0 1.5 -3" color="#FF4444" animation="property: rotation; to: 0 360 0; loop: true; dur: 4000"></a-box>
+        <!-- Tiny cube for left controller -->
+        <a-box id="leftCube" position="0 0 0" color="red" depth="0.05" height="0.05" width="0.05"></a-box>
 
-  <!-- Sky -->
-  <a-sky color="#111"></a-sky>
+        <!-- Tiny cube for right controller -->
+        <a-box id="rightCube" position="0 0 0" color="blue" depth="0.05" height="0.05" width="0.05"></a-box>
 
-  <!-- VR Rig -->
-  <a-entity id="rig" position="0 1.6 0">
-    <a-entity camera look-controls></a-entity>
-    <a-entity laser-controls="hand: left"></a-entity>
-    <a-entity laser-controls="hand: right"></a-entity>
-  </a-entity>
+        <!-- Hand entities (hidden) -->
+        <a-entity id="leftHand" laser-controls="hand: left" visible="false"></a-entity>
+        <a-entity id="rightHand" laser-controls="hand: right" visible="false"></a-entity>
+      </a-entity>
 
-</a-scene>
+      <script>
+        const leftHand = document.querySelector('#leftHand');
+        const rightHand = document.querySelector('#rightHand');
+        const leftCube = document.querySelector('#leftCube');
+        const rightCube = document.querySelector('#rightCube');
 
-</body>
+        AFRAME.registerComponent('cube-controller', {
+          tick: function () {
+            // Update cube positions to match controllers
+            leftCube.object3D.position.copy(leftHand.object3D.position);
+            leftCube.object3D.rotation.copy(leftHand.object3D.rotation);
+
+            rightCube.object3D.position.copy(rightHand.object3D.position);
+            rightCube.object3D.rotation.copy(rightHand.object3D.rotation);
+          }
+        });
+
+        document.querySelector('a-scene').setAttribute('cube-controller', '');
+      </script>
+    </a-scene>
+  </body>
 </html>
-
