@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Quest3S VR Lab</title>
+  <script src="https://aframe.io/releases/1.5.0/aframe.min.js"></script>
+</head>
+<body>
+
+<a-scene>
+
+  <!-- Ground -->
+  <a-plane rotation="-90 0 0" width="50" height="50" color="#222"></a-plane>
+
+  <!-- Spinning Cube -->
+  <a-box position="0 1.5 -3" color="#FF4444" animation="property: rotation; to: 0 360 0; loop: true; dur: 4000"></a-box>
+
+  <!-- Sky -->
+  <a-sky color="#111"></a-sky>
+
+  <!-- VR Rig -->
+  <a-entity id="rig" position="0 1.6 0">
+    <a-entity camera look-controls></a-entity>
+    <a-entity laser-controls="hand: left"></a-entity>
+    <a-entity laser-controls="hand: right"></a-entity>
+  </a-entity>
+
+</a-scene>
+
+</body>
+</html>
+
