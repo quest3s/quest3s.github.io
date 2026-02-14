@@ -1,0 +1,99 @@
+(function(Scratch) {
+  'use strict';
+
+  class WebXRExtension {
+    constructor() {
+      this.aframeLoaded = false;
+      this.scene = null;
+      this.xrSupported = false;
+      this.checkXRSupport();
+    }
+
+    getInfo() {
+      return {
+        id: "webxrExtension",
+        name: "WebXR",
+        blocks: [
+          {
+            opcode: 'loadAFrame',
+            text: 'load A-Frame library',
+            blockType: Scratch.BlockType.COMMAND
+          },
+          {
+            opcode: 'startXR',
+            text: 'start VR experience',
+            blockType: Scratch.BlockType.COMMAND
+          },
+          {
+            opcode: 'isXRSupported',
+            text: 'VR supported?',
+            blockType: Scratch.BlockType.BOOLEAN
+          }
+        ]
+      };
+    }
+
+    async checkXRSupport() {
+      if (navigator.xr) {
+        try {
+          this.xrSupported = await navigator.xr.isSessionSupported("immersive-vr");
+        } catch {
+          this.xrSupported = false;
+        }
+      } else {
+        this.xrSupported = false;
+      }
+    }
+
+    loadAFrame() {
+      if (window.AFRAME) {
+        this.aframeLoaded = true;
+        console.log("A-Frame already loaded");
+        return;
+      }
+
+      const script = document.createElement("script");
+      script.src = "https://aframe.io/releases/1.5.0/aframe.min.js";
+      script.onload = () => {
+        this.aframeLoaded = true;
+        console.log("A-Frame loaded");
+      };
+
+      document.head.appendChild(script);
+    }
+
+    startXR() {
+      if (!this.aframeLoaded) {
+        console.warn("Load A-Frame first!");
+        return;
+      }
+
+      if (this.scene) {
+        console.log("Scene already exists");
+        return;
+      }
+
+      // Create A-Frame scene
+      this.scene = document.createElement("a-scene");
+      this.scene.setAttribute("embedded", "");
+      this.scene.setAttribute("vr-mode-ui", "enabled: true");
+
+      // Add basic object
+      const box = document.createElement("a-box");
+      box.setAttribute("position", "0 1.5 -3");
+      box.setAttribute("color", "red");
+
+      this.scene.appendChild(box);
+      document.body.appendChild(this.scene);
+
+      console.log("VR scene created");
+    }
+
+    isXRSupported() {
+      return this.xrSupported;
+    }
+  }
+
+  Scratch.extensions.register(new WebXRExtension());
+})(Scratch);
+
