@@ -33,8 +33,9 @@
       };
     }
 
+    // Check if immersive VR is supported
     async checkXRSupport() {
-      if (navigator.xr) {
+      if (navigator.xr && navigator.xr.isSessionSupported) {
         try {
           this.xrSupported = await navigator.xr.isSessionSupported("immersive-vr");
         } catch {
@@ -43,52 +44,75 @@
       } else {
         this.xrSupported = false;
       }
+      console.log("XR supported:", this.xrSupported);
     }
 
-    loadAFrame() {
+    // Async A-Frame loader
+    async loadAFrame() {
       if (window.AFRAME) {
         this.aframeLoaded = true;
         console.log("A-Frame already loaded");
         return;
       }
-
-      const script = document.createElement("script");
-      script.src = "https://aframe.io/releases/1.5.0/aframe.min.js";
-      script.onload = () => {
-        this.aframeLoaded = true;
-        console.log("A-Frame loaded");
-      };
-
-      document.head.appendChild(script);
+      return new Promise(resolve => {
+        const script = document.createElement("script");
+        script.src = "https://aframe.io/releases/1.5.0/aframe.min.js";
+        script.onload = () => {
+          this.aframeLoaded = true;
+          console.log("A-Frame loaded");
+          resolve();
+        };
+        document.head.appendChild(script);
+      });
     }
 
+    // Start VR scene (wrapped in internal async for Scratch)
     startXR() {
-      if (!this.aframeLoaded) {
-        console.warn("Load A-Frame first!");
-        return;
-      }
+      this._startXRInternal();
+    }
 
+    async _startXRInternal() {
+      if (!this.aframeLoaded) await this.loadAFrame();
       if (this.scene) {
         console.log("Scene already exists");
         return;
       }
 
-      // Create A-Frame scene
+      // Create scene
       this.scene = document.createElement("a-scene");
       this.scene.setAttribute("embedded", "");
       this.scene.setAttribute("vr-mode-ui", "enabled: true");
+      this.scene.style.width = "100%";
+      this.scene.style.height = "100%";
 
-      // Add basic object
+      // Add basic box
       const box = document.createElement("a-box");
       box.setAttribute("position", "0 1.5 -3");
       box.setAttribute("color", "red");
-
+      box.setAttribute("rotation", "0 45 0");
       this.scene.appendChild(box);
+
+      // Add camera
+      const camera = document.createElement("a-entity");
+      camera.setAttribute("camera", "");
+      camera.setAttribute("position", "0 1.6 0");
+      this.scene.appendChild(camera);
+
       document.body.appendChild(this.scene);
 
       console.log("VR scene created");
+
+      // Optional: auto-enter VR on user gesture
+      this.scene.addEventListener('loaded', async () => {
+        if (this.xrSupported) {
+          console.log("VR is supported. Use VR button in scene to enter VR.");
+        } else {
+          console.warn("VR not supported on this device/browser.");
+        }
+      });
     }
 
+    // Return if VR is supported
     isXRSupported() {
       return this.xrSupported;
     }
@@ -96,4 +120,3 @@
 
   Scratch.extensions.register(new WebXRExtension());
 })(Scratch);
-
