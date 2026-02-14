@@ -1,0 +1,95 @@
+(function(Scratch) {
+  'use strict';
+
+  if (!Scratch.extensions.unsandboxed) {
+    throw new Error('This extension must run unsandboxed');
+  }
+
+  class VRExtension {
+    constructor() {
+      this.inImmersive = false;
+      this.buttonClicked = false;
+      this.buttonElement = null;
+    }
+
+    getInfo() {
+      return {
+        id: 'vrmode',
+        name: 'WebXR VR',
+        blocks: [
+          {
+            opcode: 'showVRButton',
+            blockType: Scratch.BlockType.COMMAND,
+            text: 'activate immersive button'
+          },
+          {
+            opcode: 'isImmersive',
+            blockType: Scratch.BlockType.BOOLEAN,
+            text: 'in immersive mode?'
+          },
+          {
+            opcode: 'whenVRClicked',
+            blockType: Scratch.BlockType.HAT,
+            text: 'when VR button clicked'
+          }
+        ]
+      };
+    }
+
+    showVRButton() {
+      if (this.buttonElement) return;
+
+      const btn = document.createElement('div');
+      btn.innerText = 'VR';
+      btn.style.position = 'fixed';
+      btn.style.top = '0';
+      btn.style.left = '0';
+      btn.style.width = '100vw';
+      btn.style.height = '100vh';
+      btn.style.background = 'blue';
+      btn.style.color = 'white';
+      btn.style.fontSize = '80px';
+      btn.style.display = 'flex';
+      btn.style.alignItems = 'center';
+      btn.style.justifyContent = 'center';
+      btn.style.cursor = 'pointer';
+      btn.style.zIndex = '9999';
+
+      btn.onclick = async () => {
+        this.buttonClicked = true;
+        btn.remove();
+        this.buttonElement = null;
+
+        if (navigator.xr) {
+          const supported = await navigator.xr.isSessionSupported('immersive-vr');
+          if (supported) {
+            const session = await navigator.xr.requestSession('immersive-vr');
+            this.inImmersive = true;
+
+            session.addEventListener('end', () => {
+              this.inImmersive = false;
+            });
+          }
+        }
+      };
+
+      document.body.appendChild(btn);
+      this.buttonElement = btn;
+    }
+
+    isImmersive() {
+      return this.inImmersive;
+    }
+
+    whenVRClicked() {
+      if (this.buttonClicked) {
+        this.buttonClicked = false;
+        return true;
+      }
+      return false;
+    }
+  }
+
+  Scratch.extensions.register(new VRExtension());
+})(Scratch);
+
