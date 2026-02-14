@@ -5,8 +5,6 @@
     constructor() {
       this.aframeLoaded = false;
       this.scene = null;
-      this.xrSupported = false;
-      this.checkXRSupport();
     }
 
     getInfo() {
@@ -15,106 +13,140 @@
         name: "WebXR",
         blocks: [
           {
-            opcode: 'loadAFrame',
-            text: 'load A-Frame library',
-            blockType: Scratch.BlockType.COMMAND
-          },
-          {
             opcode: 'startXR',
             text: 'start VR experience',
             blockType: Scratch.BlockType.COMMAND
-          },
-          {
-            opcode: 'isXRSupported',
-            text: 'VR supported?',
-            blockType: Scratch.BlockType.BOOLEAN
           }
         ]
       };
     }
 
-    // Check if immersive VR is supported
-    async checkXRSupport() {
-      if (navigator.xr && navigator.xr.isSessionSupported) {
-        try {
-          this.xrSupported = await navigator.xr.isSessionSupported("immersive-vr");
-        } catch {
-          this.xrSupported = false;
-        }
-      } else {
-        this.xrSupported = false;
-      }
-      console.log("XR supported:", this.xrSupported);
-    }
-
-    // Async A-Frame loader
-    async loadAFrame() {
-      if (window.AFRAME) {
-        this.aframeLoaded = true;
-        console.log("A-Frame already loaded");
-        return;
-      }
-      return new Promise(resolve => {
-        const script = document.createElement("script");
-        script.src = "https://aframe.io/releases/1.5.0/aframe.min.js";
-        script.onload = () => {
-          this.aframeLoaded = true;
-          console.log("A-Frame loaded");
-          resolve();
-        };
-        document.head.appendChild(script);
-      });
-    }
-
-    // Start VR scene (wrapped in internal async for Scratch)
     startXR() {
       this._startXRInternal();
     }
 
     async _startXRInternal() {
-      if (!this.aframeLoaded) await this.loadAFrame();
-      if (this.scene) {
-        console.log("Scene already exists");
-        return;
+      // 1️⃣ Load A-Frame & physics system if not loaded
+      if (!this.aframeLoaded) {
+        await new Promise(resolve => {
+          const script1 = document.createElement("script");
+          script1.src = "https://aframe.io/releases/1.5.0/aframe.min.js";
+          script1.onload = () => {
+            const script2 = document.createElement("script");
+            script2.src = "https://cdn.jsdelivr.net/gh/n5ro/aframe-physics-system@v4.0.1/dist/aframe-physics-system.min.js";
+            script2.onload = () => {
+              this.aframeLoaded = true;
+              resolve();
+            };
+            document.head.appendChild(script2);
+          };
+          document.head.appendChild(script1);
+        });
       }
 
-      // Create scene
+      if (this.scene) return; // Already created
+
+      // 2️⃣ Create scene
       this.scene = document.createElement("a-scene");
-      this.scene.setAttribute("embedded", "");
-      this.scene.setAttribute("vr-mode-ui", "enabled: true");
-      this.scene.style.width = "100%";
-      this.scene.style.height = "100%";
-
-      // Add basic box
-      const box = document.createElement("a-box");
-      box.setAttribute("position", "0 1.5 -3");
-      box.setAttribute("color", "red");
-      box.setAttribute("rotation", "0 45 0");
-      this.scene.appendChild(box);
-
-      // Add camera
-      const camera = document.createElement("a-entity");
-      camera.setAttribute("camera", "");
-      camera.setAttribute("position", "0 1.6 0");
-      this.scene.appendChild(camera);
-
+      this.scene.setAttribute("physics", "gravity: -9.8; debug: false");
       document.body.appendChild(this.scene);
 
-      console.log("VR scene created");
+      // 3️⃣ Floor
+      const floor = document.createElement("a-plane");
+      floor.setAttribute("rotation", "-90 0 0");
+      floor.setAttribute("width", "20");
+      floor.setAttribute("height", "20");
+      floor.setAttribute("color", "#222");
+      floor.setAttribute("static-body", "");
+      this.scene.appendChild(floor);
 
-      // Optional: auto-enter VR on user gesture
-      this.scene.addEventListener('loaded', async () => {
-        if (this.xrSupported) {
-          console.log("VR is supported. Use VR button in scene to enter VR.");
-        } else {
-          console.warn("VR not supported on this device/browser.");
+      // 4️⃣ Sky
+      const sky = document.createElement("a-sky");
+      sky.setAttribute("color", "#111");
+      this.scene.appendChild(sky);
+
+      // 5️⃣ Camera rig
+      const rig = document.createElement("a-entity");
+      rig.setAttribute("id", "rig");
+      rig.setAttribute("position", "0 1.6 0");
+
+      const camera = document.createElement("a-entity");
+      camera.setAttribute("camera", "");
+      camera.setAttribute("look-controls", "");
+      rig.appendChild(camera);
+
+      // 6️⃣ Tiny cubes for controllers
+      const leftCube = document.createElement("a-box");
+      leftCube.setAttribute("id", "leftCube");
+      leftCube.setAttribute("position", "0 0 0");
+      leftCube.setAttribute("color", "red");
+      leftCube.setAttribute("width", "0.1");
+      leftCube.setAttribute("height", "0.1");
+      leftCube.setAttribute("depth", "0.1");
+      leftCube.setAttribute("kinematic-body", "");
+      rig.appendChild(leftCube);
+
+      const rightCube = document.createElement("a-box");
+      rightCube.setAttribute("id", "rightCube");
+      rightCube.setAttribute("position", "0 0 0");
+      rightCube.setAttribute("color", "blue");
+      rightCube.setAttribute("width", "0.1");
+      rightCube.setAttribute("height", "0.1");
+      rightCube.setAttribute("depth", "0.1");
+      rightCube.setAttribute("kinematic-body", "");
+      rig.appendChild(rightCube);
+
+      // 7️⃣ Hidden hand entities
+      const leftHand = document.createElement("a-entity");
+      leftHand.setAttribute("id", "leftHand");
+      leftHand.setAttribute("laser-controls", "hand: left");
+      leftHand.setAttribute("visible", "false");
+      rig.appendChild(leftHand);
+
+      const rightHand = document.createElement("a-entity");
+      rightHand.setAttribute("id", "rightHand");
+      rightHand.setAttribute("laser-controls", "hand: right");
+      rightHand.setAttribute("visible", "false");
+      rig.appendChild(rightHand);
+
+      this.scene.appendChild(rig);
+
+      // 8️⃣ Controller cube movement component
+      const sceneEl = this.scene;
+      AFRAME.registerComponent('cube-controller', {
+        tick: function () {
+          const lh = document.querySelector('#leftHand').object3D;
+          const rh = document.querySelector('#rightHand').object3D;
+          const lc = document.querySelector('#leftCube').object3D;
+          const rc = document.querySelector('#rightCube').object3D;
+
+          lc.position.copy(lh.position);
+          lc.quaternion.copy(lh.quaternion);
+
+          rc.position.copy(rh.position);
+          rc.quaternion.copy(rh.quaternion);
         }
       });
-    }
+      this.scene.setAttribute('cube-controller', '');
 
-    // Return if VR is supported
-    isXRSupported() {
-      return this.xrSupported;
+      // 9️⃣ Spawn dynamic cubes at right hand on trigger
+      AFRAME.registerComponent('spawn-cube', {
+        init: function () {
+          const right = document.querySelector('#rightHand');
+          right.addEventListener('triggerdown', () => {
+            const cube = document.createElement('a-box');
+            const pos = right.object3D.position;
+            cube.setAttribute('position', `${pos.x} ${pos.y} ${pos.z}`);
+            cube.setAttribute('width', '0.1');
+            cube.setAttribute('height', '0.1');
+            cube.setAttribute('depth', '0.1');
+            cube.setAttribute('color', '#00ff00');
+            cube.setAttribute('dynamic-body', '');
+            sceneEl.appendChild(cube);
+          });
+        }
+      });
+      this.scene.setAttribute('spawn-cube', '');
     }
   }
 
